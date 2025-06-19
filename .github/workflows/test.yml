@@ -1,0 +1,107 @@
+# GitHub Actions Workflow для автоматического тестирования Django приложения
+# Этот файл определяет, что происходит при каждом push/merge в main ветку
+
+name: Django Tests
+
+# Определяем, когда запускать workflow
+on:
+  # Запускается при push в main ветку
+  push:
+    branches: [ main ]
+  # Запускается при создании Pull Request в main ветку
+  pull_request:
+    branches: [ main ]
+
+# Определяем jobs (задачи), которые будут выполняться
+jobs:
+  # Job для тестирования
+  test:
+    # Запускаем на Ubuntu (можно также использовать windows-latest, macos-latest)
+    runs-on: ubuntu-latest
+    
+    # Определяем стратегию для разных версий Python
+    strategy:
+      # matrix позволяет запустить тесты на нескольких версиях Python одновременно
+      matrix:
+        python-version: ["3.11", "3.12"]
+    
+    # Шаги, которые будут выполнены
+    steps:
+    # Шаг 1: Получаем код из репозитория
+    - name: Checkout code
+      # actions/checkout@v4 - это официальное действие GitHub для получения кода
+      uses: actions/checkout@v4
+      # Этот шаг клонирует ваш репозиторий в runner (виртуальную машину)
+    
+    # Шаг 2: Настраиваем Python
+    - name: Set up Python ${{ matrix.python-version }}
+      # actions/setup-python@v4 - официальное действие для установки Python
+      uses: actions/setup-python@v4
+      with:
+        # Используем версию Python из matrix
+        python-version: ${{ matrix.python-version }}
+        # Кэшируем pip для ускорения установки зависимостей
+        cache: 'pip'
+    
+    # Шаг 3: Устанавливаем зависимости
+    - name: Install dependencies
+      run: |
+        # Обновляем pip до последней версии
+        python -m pip install --upgrade pip
+        # Устанавливаем зависимости из requirements.txt
+        pip install -r requirements.txt
+        # Устанавливаем дополнительные пакеты для тестирования
+        pip install pytest pytest-django coverage
+    
+    # Шаг 4: Настраиваем базу данных
+    - name: Setup database
+      run: |
+        # Создаем переменные окружения для тестов
+        echo "DEBUG=True" >> $GITHUB_ENV
+        echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
+        echo "DATABASE_URL=sqlite:///test.db" >> $GITHUB_ENV
+        echo "ALPHA_VANTAGE_API_KEY=demo" >> $GITHUB_ENV
+    
+    # Шаг 5: Выполняем миграции
+    - name: Run migrations
+      run: |
+        # Применяем миграции к тестовой базе данных
+        python manage.py migrate
+        # Создаем суперпользователя для тестов (если нужно)
+        python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin@test.com', 'adminpass123') if not User.objects.filter(email='admin@test.com').exists() else None"
+    
+    # Шаг 6: Запускаем тесты
+    - name: Run tests
+      run: |
+        # Запускаем тесты Django
+        python manage.py test --verbosity=2
+        # Альтернативно можно использовать pytest:
+        # pytest --cov=apps --cov-report=xml
+    
+    # Шаг 7: Проверяем качество кода (опционально)
+    - name: Code quality check
+      run: |
+        # Проверяем синтаксис Python файлов
+        python -m py_compile apps/**/*.py
+        python -m py_compile stock_market/**/*.py
+        # Проверяем импорты
+        python -c "import apps.portfolios, apps.stocks, apps.users, stock_market"
+    
+    # Шаг 8: Проверяем безопасность (опционально)
+    - name: Security check
+      run: |
+        # Проверяем на уязвимости в зависимостях
+        pip install safety
+        safety check --json --output safety-report.json || true
+    
+    # Шаг 9: Сохраняем артефакты (результаты тестов)
+    - name: Upload test results
+      # Сохраняем файлы для последующего анализа
+      uses: actions/upload-artifact@v4
+      if: always()  # Выполняется даже если тесты упали
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          safety-report.json
+          *.log
+        retention-days: 7  # Храним 7 дней 

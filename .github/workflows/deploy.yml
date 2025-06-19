@@ -1,0 +1,114 @@
+# GitHub Actions Workflow для автоматического развертывания
+# Этот workflow запускается только после успешного прохождения тестов
+
+name: Deploy to Production
+
+# Запускается только при push в main ветку И после успешного прохождения тестов
+on:
+  push:
+    branches: [ main ]
+
+# Указываем, что этот workflow зависит от успешного завершения тестов
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  # Job для развертывания
+  deploy:
+    # Запускаем только после успешного завершения тестов
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Шаг 1: Получаем код
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    # Шаг 2: Настраиваем Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+    
+    # Шаг 3: Устанавливаем зависимости
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    # Шаг 4: Собираем статические файлы
+    - name: Collect static files
+      run: |
+        # Создаем временные переменные окружения для сборки
+        export DEBUG=False
+        export SECRET_KEY=temp-key-for-build
+        export DATABASE_URL=sqlite:///temp.db
+        export ALPHA_VANTAGE_API_KEY=demo
+        # Собираем статические файлы
+        python manage.py collectstatic --noinput
+    
+    # Шаг 5: Создаем Docker образ (если используете Docker)
+    - name: Build Docker image
+      run: |
+        # Создаем Docker образ
+        docker build -t stock-market-app:${{ github.sha }} .
+        # Тегируем образ
+        docker tag stock-market-app:${{ github.sha }} stock-market-app:latest
+    
+    # Шаг 6: Развертывание на сервер (пример для SSH)
+    - name: Deploy to server
+      # Используем SSH для подключения к серверу
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        # Эти секреты нужно добавить в настройках репозитория
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          # Останавливаем текущее приложение
+          docker-compose down
+          
+          # Получаем последние изменения
+          cd /path/to/your/app
+          git pull origin main
+          
+          # Обновляем переменные окружения
+          cp .env.example .env
+          # Здесь можно обновить секреты из GitHub Secrets
+          
+          # Запускаем миграции
+          docker-compose exec web python manage.py migrate
+          
+          # Перезапускаем приложение
+          docker-compose up -d
+          
+          # Проверяем статус
+          docker-compose ps
+    
+    # Шаг 7: Проверка здоровья приложения
+    - name: Health check
+      run: |
+        # Ждем немного для запуска приложения
+        sleep 30
+        # Проверяем, что приложение отвечает
+        curl -f http://${{ secrets.HOST }}:8000/ || exit 1
+    
+    # Шаг 8: Уведомление о развертывании
+    - name: Notify deployment
+      if: success()
+      run: |
+        echo "✅ Deployment successful!"
+        echo "🚀 Application is live at: http://${{ secrets.HOST }}"
+        echo "📊 Commit: ${{ github.sha }}"
+        echo "👤 Author: ${{ github.actor }}"
+    
+    # Шаг 9: Уведомление об ошибке
+    - name: Notify failure
+      if: failure()
+      run: |
+        echo "❌ Deployment failed!"
+        echo "🔍 Check the logs above for details"
+        echo "📧 Notify the team about the failure" 
