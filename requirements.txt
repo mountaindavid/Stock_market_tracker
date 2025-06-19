@@ -5,6 +5,7 @@ requests==2.31.0
 redis==5.0.1
 python-dotenv==1.0.0
 yfinance==0.2.36
+dj-database-url>=2.0.0,<3.0.0
 
 # Зависимости для тестирования
 pytest>=7.4.0,<8.0.0
