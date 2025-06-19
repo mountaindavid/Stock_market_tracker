@@ -59,6 +59,8 @@ jobs:
           sleep 2
         done
     
+    - name: Create logs directory
+      run: mkdir -p logs
     - name: Run migrations
       run: |
         python manage.py migrate

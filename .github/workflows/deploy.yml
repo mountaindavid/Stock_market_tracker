@@ -37,6 +37,8 @@ jobs:
         pip install -r requirements.txt
     
     # Шаг 4: Собираем статические файлы
+    - name: Create logs directory
+      run: mkdir -p logs
     - name: Collect static files
       run: |
         # Создаем временные переменные окружения для сборки
