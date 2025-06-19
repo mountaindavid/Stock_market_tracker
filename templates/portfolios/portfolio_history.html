@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}History - {{ portfolio.name }}{% endblock %}
+
+{% block content %}
+<h2>History for {{ portfolio.name }}</h2>
+
+<form method="get" action="{% url 'portfolios:clear_history' portfolio.id %}" style="margin-bottom: 24px;">
+    <button type="submit" style="background:#ef4444; color:white; font-weight:600; padding:10px 20px; border-radius:8px;">Clear All History</button>
+</form>
+
+{% if history %}
+    {% for group in history %}
+        <div class="stock-item" style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 24px; background: #f9fafb; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            
+            <!-- 1. Basic Company Information -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 600; color: #111827;">
+                            {% if group.company_info.name %}{{ group.company_info.name }}{% else %}{{ group.purchases.0.company_name }}{% endif %}
+                        </h4>
+                        <div style="display: flex; gap: 16px; font-size: 0.875rem; color: #6b7280;">
+                            <span><strong>Ticker:</strong> {{ group.ticker }}</span>
+                            {% if group.company_info.exchange %}
+                                <span><strong>Exchange:</strong> {{ group.company_info.exchange }}</span>
+                            {% endif %}
+                            {% if group.company_info.sector %}
+                                <span><strong>Sector:</strong> {{ group.company_info.sector }}</span>
+                            {% endif %}
+                            {% if group.company_info.industry %}
+                                <span><strong>Industry:</strong> {{ group.company_info.industry }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'portfolios:delete_history_ticker' portfolio.id group.ticker %}">
+                        {% csrf_token %}
+                        <button type="submit" style="background:#ef4444; color:white; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; font-size:0.875rem;">Delete</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. Trading Summary -->
+            <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <h5 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #374151;">Trading Summary</h5>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div>
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Total Shares Bought</div>
+                        <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">{{ group.total_qty }} shares</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Average Purchase Price</div>
+                        <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">${{ group.avg_price|floatformat:2 }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Total Received</div>
+                        <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">${{ group.total_received|floatformat:2 }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Profit/Loss (PnL)</div>
+                        <div style="font-size: 1.125rem; font-weight: 600; {% if group.profit > 0 %}color: #059669;{% elif group.profit < 0 %}color: #dc2626;{% else %}color: #111827;{% endif %};">
+                            {% if group.profit > 0 %}+{% endif %}${{ group.profit|floatformat:2 }} 
+                            ({% if group.percent_profit > 0 %}+{% endif %}{{ group.percent_profit|floatformat:1 }}%)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purchase History -->
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer;" onclick="toggleHistory('purchase-history-{{ group.ticker }}')">
+                    <h6 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #374151;">Purchase History</h6>
+                    <span id="toggle-purchase-{{ group.ticker }}" style="font-size: 0.875rem; color: #6b7280;">▼ Show</span>
+                </div>
+                <div id="purchase-history-{{ group.ticker }}" style="display: none; font-size: 0.875rem; color: #6b7280;">
+                    <div style="display: flex; font-weight: 600; gap: 12px; margin-bottom: 8px;">
+                        <span style="width: 80px;">Quantity</span>
+                        <span style="width: 100px;">Purchase Price</span>
+                        <span style="width: 100px;">Current Price</span>
+                        <span style="flex: 1;">Purchase Date</span>
+                    </div>
+                    {% for stock in group.purchases %}
+                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 4px;">
+                            <span style="width: 80px;">{{ stock.quantity }} shares</span>
+                            <span style="width: 100px;">${{ stock.purchase_price|floatformat:2 }}</span>
+                            <span style="width: 100px; {% if stock.current_price > stock.purchase_price %}color: #059669;{% elif stock.current_price < stock.purchase_price %}color: #dc2626;{% endif %};">
+                                ${{ stock.current_price|default:stock.purchase_price|floatformat:2 }}
+                            </span>
+                            <span style="flex: 1;">{{ stock.purchase_date|date:"Y-m-d H:i" }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Sales History -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer;" onclick="toggleHistory('sales-history-{{ group.ticker }}')">
+                    <h6 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: #374151;">Sales History</h6>
+                    <span id="toggle-sales-{{ group.ticker }}" style="font-size: 0.875rem; color: #6b7280;">▼ Show</span>
+                </div>
+                <div id="sales-history-{{ group.ticker }}" style="display: none; font-size: 0.875rem; color: #6b7280;">
+                    {% for sale in group.sales %}
+                        <div style="margin-bottom: 4px;">
+                            Sold {{ sale.quantity }} shares @ ${{ sale.sale_price }} ({{ sale.sale_date|date:"Y-m-d H:i" }})
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No fully sold tickers yet.</p>
+{% endif %}
+
+<p><a href="{% url 'portfolios:portfolio_detail' portfolio.id %}">Back to Portfolio</a></p>
+
+<script>
+function toggleHistory(historyId) {
+    const historyDiv = document.getElementById(historyId);
+    const parts = historyId.split('-');
+    const type = parts[0]; // 'purchase' or 'sales'
+    const ticker = parts[2]; // ticker symbol
+    const toggleSpan = document.getElementById('toggle-' + type + '-' + ticker);
+    
+    if (historyDiv.style.display === 'none') {
+        historyDiv.style.display = 'block';
+        toggleSpan.textContent = '▲ Hide';
+    } else {
+        historyDiv.style.display = 'none';
+        toggleSpan.textContent = '▼ Show';
+    }
+}
+</script>
+{% endblock %} 

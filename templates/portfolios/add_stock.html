@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Stock to {{ portfolio.name }}{% endblock %}
+
+{% block content %}
+<h2>Add Stock to {{ portfolio.name }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <p>
+        <label>Ticker Symbol:</label><br>
+        <input type="text" name="ticker" placeholder="e.g., AAPL" required value="{{ request.GET.ticker|default:'' }}" {% if request.GET.ticker %}readonly{% endif %}>
+    </p>
+    <p>
+        <label>Company Name:</label><br>
+        <input type="text" name="company_name" placeholder="e.g., Apple Inc." required value="{{ request.GET.company_name|default:'' }}" {% if request.GET.company_name %}readonly{% endif %}>
+    </p>
+    <p>
+        <label>Quantity:</label><br>
+        <input type="number" name="quantity" min="1" required>
+    </p>
+    <p>
+        <label>Purchase Price per Share:</label><br>
+        <input type="number" name="purchase_price" step="0.01" min="0" required>
+    </p>
+    <button type="submit">Add Stock</button>
+</form>
+<p><a href="{% url 'portfolios:portfolio_detail' portfolio.id %}">Back to Portfolio</a></p>
+{% endblock %} 

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Logout{% endblock %}
+
+{% block content %}
+<h2>Are you sure you want to log out?</h2>
+<form method="post" style="display: flex; flex-direction: row; justify-content: center; gap: 16px;">
+    {% csrf_token %}
+    <button type="submit">Yes, log out</button>
+    <a href="{% url 'home' %}" style="display: inline-block; padding: 8px 16px; background: #eee; border-radius: 6px; text-decoration: none; color: #333; line-height: 2.2;">No, stay logged in</a>
+</form>
+{% endblock %} 

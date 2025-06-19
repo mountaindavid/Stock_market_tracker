@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}My Portfolios{% endblock %}
+
+{% block content %}
+<h2>My Portfolios</h2>
+
+{% if portfolios %}
+    {% for portfolio in portfolios %}
+        <div class="stock-item" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div>
+                <h3 style="margin:0;display:inline;"><a href="{% url 'portfolios:portfolio_detail' portfolio.id %}">{{ portfolio.name }}</a></h3>
+                <p style="margin:4px 0 0 0;">Created: {{ portfolio.created_at|date:"Y-m-d H:i:s" }}</p>
+                <p style="margin:4px 0 0 0;">Total Value: ${{ portfolio.total_value|floatformat:2 }}</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                <form method="get" action="{% url 'portfolios:rename_portfolio' portfolio.id %}" style="margin:0; width:110px;">
+                    <button type="submit" style="width:100%; background:#2563eb; color:white; font-weight:600; padding:6px 0; border-radius:6px;">Rename</button>
+                </form>
+                <form method="get" action="{% url 'portfolios:delete_portfolio' portfolio.id %}" style="margin:0; width:110px;">
+                    <button type="submit" style="width:100%; background:#ef4444; color:white; font-weight:600; padding:6px 0; border-radius:6px;">Delete</button>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>You don't have any portfolios yet.</p>
+{% endif %}
+
+<p>
+    <a href="{% url 'portfolios:create_portfolio' %}" style="display:block; width:100%; text-align:center; background:#2563eb; color:white; font-weight:600; padding:12px 0; border-radius:8px; text-decoration:none; margin-top:24px;">Create New Portfolio</a>
+</p>
+{% endblock %} 

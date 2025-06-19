@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Market Portfolio - Home{% endblock %}
+
+{% block content %}
+<div style="background:#f3f4f6; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:40px 32px; text-align:center; margin-top:32px;">
+    <h1 style="font-size:2.4rem; margin-bottom:12px;">📈 <span style="color:#2563eb;">Stock Market Tracker</span></h1>
+    <p style="font-size:1.15rem; color:#555; margin-bottom:32px;">Track your investments, analyze your performance, and manage your stock portfolios with ease.</p>
+    {% if user.is_authenticated %}
+        <p style="font-size:1.1rem; margin-bottom:32px;">Hello, <strong>{{ user.email }}</strong>!</p>
+        <div style="display:flex; gap:18px; justify-content:center;">
+            <a href="{% url 'portfolios:portfolio_list' %}" style="flex:1; max-width:220px; background:#2563eb; color:white; font-weight:600; padding:16px 0; border-radius:10px; text-decoration:none; font-size:1.1rem; box-shadow:0 2px 8px rgba(37,99,235,0.08);">📊 View your portfolios</a>
+            <a href="{% url 'portfolios:create_portfolio' %}" style="flex:1; max-width:220px; background:#22c55e; color:white; font-weight:600; padding:16px 0; border-radius:10px; text-decoration:none; font-size:1.1rem; box-shadow:0 2px 8px rgba(34,197,94,0.08);">➕ Create a new portfolio</a>
+        </div>
+    {% else %}
+        <div style="display:flex; gap:18px; justify-content:center; margin-top:24px;">
+            <a href="{% url 'users:login' %}" style="flex:1; max-width:180px; background:#2563eb; color:white; font-weight:600; padding:14px 0; border-radius:10px; text-decoration:none; font-size:1.1rem; box-shadow:0 2px 8px rgba(37,99,235,0.08);">🔑 Login</a>
+            <a href="{% url 'users:register' %}" style="flex:1; max-width:180px; background:#22c55e; color:white; font-weight:600; padding:14px 0; border-radius:10px; text-decoration:none; font-size:1.1rem; box-shadow:0 2px 8px rgba(34,197,94,0.08);">📝 Register</a>
+        </div>
+        <p style="color:#888; margin-top:32px;">Create an account to start managing your stock portfolios.</p>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Portfolio{% endblock %}
+
+{% block content %}
+<h2>Create New Portfolio</h2>
+<form method="post">
+    {% csrf_token %}
+    <p>
+        <label>Portfolio Name:</label><br>
+        <input type="text" name="name" required>
+    </p>
+    <button type="submit">Create Portfolio</button>
+</form>
+<p><a href="{% url 'portfolios:portfolio_list' %}">Back to Portfolios</a></p>
+{% endblock %} 

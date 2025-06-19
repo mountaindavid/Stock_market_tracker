@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Sell Stock{% endblock %}
+
+{% block content %}
+<h2>Sell {{ stock.ticker }} ({{ stock.company_name }})</h2>
+<p>Available to sell: {{ available }} shares</p>
+<form method="post">
+    {% csrf_token %}
+    <label>Quantity to sell:</label>
+    <input type="number" name="quantity" min="1" max="{{ available }}" required>
+    <label>Sale price per share:</label>
+    <input type="number" name="sale_price" step="0.01" min="0.01" required>
+    <button type="submit">Sell</button>
+</form>
+<p><a href="{% url 'portfolios:portfolio_detail' portfolio.id %}">Back to Portfolio</a></p>
+{% endblock %} 

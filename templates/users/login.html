@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 32px auto 0 auto; background: #f3f4f6; border-radius: 12px; padding: 32px 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+    <h2 style="text-align: center; margin-bottom: 24px; color: #111827;">Login</h2>
+    
+    <form method="post" style="display: flex; flex-direction: column; gap: 16px;">
+        {% csrf_token %}
+        
+        <div>
+            <label for="email" style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151;">Email:</label>
+            <input type="email" id="email" name="email" required 
+                   style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <div>
+            <label for="password" style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151;">Password:</label>
+            <input type="password" id="password" name="password" required 
+                   style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <button type="submit" style="background: #2563eb; color: white; font-weight: 600; padding: 12px 0; border-radius: 8px; font-size: 1rem; border: none; cursor: pointer; margin-top: 8px;">
+            Login
+        </button>
+    </form>
+    
+    <div style="text-align: center; margin-top: 16px;">
+        <a href="{% url 'users:password_reset' %}" style="color: #2563eb; text-decoration: none; font-size: 0.875rem;">
+            Forgot your password?
+        </a>
+    </div>
+    
+    <div style="text-align: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+        <p style="color: #6b7280; margin-bottom: 16px;">Don't have an account?</p>
+        <a href="{% url 'users:register' %}" style="background: #22c55e; color: white; font-weight: 600; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 0.875rem;">
+            Register here
+        </a>
+    </div>
+</div>
+{% endblock %} 

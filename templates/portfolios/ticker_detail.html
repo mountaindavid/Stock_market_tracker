@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ ticker }} - {{ portfolio.name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'portfolios:portfolio_detail' portfolio.id %}" style="color: #2563eb; text-decoration: none; font-weight: 600;">← Back to Portfolio</a>
+</div>
+
+<div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    
+    <!-- Company Information -->
+    <div style="margin-bottom: 24px;">
+        <h2 style="margin: 0 0 8px 0; font-size: 1.5rem; font-weight: 600; color: #111827;">
+            {% if company_info.name %}{{ company_info.name }}{% else %}{{ stocks.0.company_name }}{% endif %}
+        </h2>
+        <div style="display: flex; gap: 16px; font-size: 0.875rem; color: #6b7280; margin-bottom: 16px;">
+            <span><strong>Ticker:</strong> {{ ticker }}</span>
+            {% if company_info.exchange %}
+                <span><strong>Exchange:</strong> {{ company_info.exchange }}</span>
+            {% endif %}
+            {% if company_info.sector %}
+                <span><strong>Sector:</strong> {{ company_info.sector }}</span>
+            {% endif %}
+            {% if company_info.industry %}
+                <span><strong>Industry:</strong> {{ company_info.industry }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- Current Market Data -->
+        {% if quote_info %}
+        <div style="background: #f8fafc; border-radius: 8px; padding: 16px;">
+            <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #374151;">Current Market Data</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                <div>
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Current Price</div>
+                    <div style="font-size: 1.25rem; font-weight: 600; color: #111827;">${{ quote_info.price|floatformat:2 }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Daily Change</div>
+                    <div style="font-size: 1.25rem; font-weight: 600; {% if quote_info.change > 0 %}color: #059669;{% elif quote_info.change < 0 %}color: #dc2626;{% else %}color: #111827;{% endif %};">
+                        {% if quote_info.change > 0 %}+{% endif %}{{ quote_info.change|floatformat:2 }} 
+                        ({% if quote_info.change > 0 %}+{% endif %}{{ quote_info.change_percent|default:"0%" }})
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Volume</div>
+                    <div style="font-size: 1.25rem; font-weight: 600; color: #111827;">{{ quote_info.volume|floatformat:0 }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Position Summary -->
+    <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 600; color: #374151;">Position Summary</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Total Shares Bought</div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">{{ total_qty }} shares</div>
+            </div>
+            <div>
+                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Shares Currently Owned</div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">{{ remaining_qty }} shares</div>
+            </div>
+            <div>
+                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Shares Sold</div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">{{ total_sold }} shares</div>
+            </div>
+            <div>
+                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Average Purchase Price</div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">${{ avg_price|floatformat:2 }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Current Position Value</div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: #111827;">${{ current_value|floatformat:2 }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">Unrealized P&L</div>
+                <div style="font-size: 1.125rem; font-weight: 600; {% if profit > 0 %}color: #059669;{% elif profit < 0 %}color: #dc2626;{% else %}color: #111827;{% endif %};">
+                    {% if profit > 0 %}+{% endif %}${{ profit|floatformat:2 }} 
+                    ({% if percent_profit > 0 %}+{% endif %}{{ percent_profit|floatformat:1 }}%)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase History -->
+    <div style="margin-bottom: 24px;">
+        <h4 style="margin: 0 0 16px 0; font-size: 1rem; font-weight: 600; color: #374151;">Purchase History</h4>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Purchase Date</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Quantity</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Purchase Price</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Total Cost</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Current Price</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Current Value</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">P&L</th>
+                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stocks %}
+                        {% with sold_qty=stock.sales.all|length %}
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                            <td style="padding: 12px; color: #6b7280;">{{ stock.purchase_date|date:"Y-m-d H:i" }}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">{{ stock.quantity }} shares</td>
+                            <td style="padding: 12px; text-align: right;">${{ stock.purchase_price|floatformat:2 }}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">${{ stock.total_purchase_value|floatformat:2 }}</td>
+                            <td style="padding: 12px; text-align: right; {% if stock.current_price > stock.purchase_price %}color: #059669;{% elif stock.current_price < stock.purchase_price %}color: #dc2626;{% endif %};">
+                                ${{ stock.current_price|default:stock.purchase_price|floatformat:2 }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">${{ stock.current_value|floatformat:2 }}</td>
+                            <td style="padding: 12px; text-align: right; {% if stock.profit_loss > 0 %}color: #059669;{% elif stock.profit_loss < 0 %}color: #dc2626;{% endif %};">
+                                {% if stock.profit_loss > 0 %}+{% endif %}${{ stock.profit_loss|floatformat:2 }}
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                {% if stock.available_quantity > 0 %}
+                                    <span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Active</span>
+                                {% else %}
+                                    <span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Sold</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sales History -->
+    {% if all_sales %}
+    <div>
+        <h4 style="margin: 0 0 16px 0; font-size: 1rem; font-weight: 600; color: #374151;">Sales History</h4>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Sale Date</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Quantity</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Sale Price</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Purchase Price</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Total Received</th>
+                        <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Realized P&L</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale_data in all_sales %}
+                        {% with sale=sale_data.sale purchase_price=sale_data.purchase_price %}
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                            <td style="padding: 12px; color: #6b7280;">{{ sale.sale_date|date:"Y-m-d H:i" }}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">{{ sale.quantity }} shares</td>
+                            <td style="padding: 12px; text-align: right;">${{ sale.sale_price|floatformat:2 }}</td>
+                            <td style="padding: 12px; text-align: right;">${{ purchase_price|floatformat:2 }}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">${{ sale.total_sale_value|floatformat:2 }}</td>
+                            <td style="padding: 12px; text-align: right; {% if sale.profit > 0 %}color: #059669;{% elif sale.profit < 0 %}color: #dc2626;{% endif %};">
+                                {% if sale.profit > 0 %}+{% endif %}${{ sale.profit|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <a href="{% url 'portfolios:add_stock' portfolio.id %}?ticker={{ ticker }}&company_name={{ stocks.0.company_name|urlencode }}" style="flex: 1; text-align: center; background: #22c55e; color: white; font-weight: 600; padding: 12px 0; border-radius: 8px; text-decoration: none;">Buy More Shares</a>
+        {% if remaining_qty > 0 %}
+        <form method="get" action="{% url 'portfolios:sell_ticker' portfolio.id ticker %}" style="flex: 1; margin: 0;">
+            <button type="submit" style="width: 100%; background: #ef4444; color: white; font-weight: 600; padding: 12px 0; border-radius: 8px; border: none; cursor: pointer;">Sell Shares</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

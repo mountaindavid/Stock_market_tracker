@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ ticker }} - Stock Information{% endblock %}
+
+{% block content %}
+<div class="stock-info">
+    <h2>{{ ticker }} - Stock Information</h2>
+    
+    {% if quote %}
+    <div class="quote-section">
+        <h3>Current Quote</h3>
+        <div class="quote-grid">
+            <div class="quote-item">
+                <span class="label">Current Price:</span>
+                <span class="value">${{ quote.price }}</span>
+            </div>
+            <div class="quote-item">
+                <span class="label">Change:</span>
+                <span class="value {% if quote.change >= 0 %}positive{% else %}negative{% endif %}">
+                    {{ quote.change }} ({{ quote.change_percent }})
+                </span>
+            </div>
+            <div class="quote-item">
+                <span class="label">Volume:</span>
+                <span class="value">{{ quote.volume|floatformat:0 }}</span>
+            </div>
+            <div class="quote-item">
+                <span class="label">Previous Close:</span>
+                <span class="value">${{ quote.previous_close }}</span>
+            </div>
+            <div class="quote-item">
+                <span class="label">Open:</span>
+                <span class="value">${{ quote.open }}</span>
+            </div>
+            <div class="quote-item">
+                <span class="label">High:</span>
+                <span class="value">${{ quote.high }}</span>
+            </div>
+            <div class="quote-item">
+                <span class="label">Low:</span>
+                <span class="value">${{ quote.low }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if overview %}
+    <div class="overview-section">
+        <h3>Company Overview</h3>
+        <div class="overview-grid">
+            <div class="overview-item">
+                <span class="label">Company Name:</span>
+                <span class="value">{{ overview.name }}</span>
+            </div>
+            <div class="overview-item">
+                <span class="label">Exchange:</span>
+                <span class="value">{{ overview.exchange }}</span>
+            </div>
+            <div class="overview-item">
+                <span class="label">Sector:</span>
+                <span class="value">{{ overview.sector }}</span>
+            </div>
+            <div class="overview-item">
+                <span class="label">Industry:</span>
+                <span class="value">{{ overview.industry }}</span>
+            </div>
+            <div class="overview-item">
+                <span class="label">Market Cap:</span>
+                <span class="value">${{ overview.market_cap }}</span>
+            </div>
+            <div class="overview-item">
+                <span class="label">P/E Ratio:</span>
+                <span class="value">{{ overview.pe_ratio }}</span>
+            </div>
+            <div class="overview-item">
+                <span class="label">Dividend Yield:</span>
+                <span class="value">{{ overview.dividend_yield }}</span>
+            </div>
+            <div class="overview-item">
+                <span class="label">EPS:</span>
+                <span class="value">{{ overview.eps }}</span>
+            </div>
+        </div>
+        
+        {% if overview.description %}
+        <div class="description">
+            <h4>Description</h4>
+            <p>{{ overview.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% if not quote and not overview %}
+    <div class="no-data">
+        <p>No information available for {{ ticker }}. Please check the ticker symbol and try again.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.stock-info {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.quote-section, .overview-section {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.quote-grid, .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.quote-item, .overview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.value {
+    font-weight: 500;
+    color: #111827;
+}
+
+.value.positive {
+    color: #059669;
+}
+
+.value.negative {
+    color: #dc2626;
+}
+
+.description {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.description h4 {
+    margin-bottom: 12px;
+    color: #374151;
+}
+
+.description p {
+    line-height: 1.6;
+    color: #6b7280;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+}
+</style>
+{% endblock %} 

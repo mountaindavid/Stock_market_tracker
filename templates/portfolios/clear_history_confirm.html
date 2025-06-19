@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Clear All History{% endblock %}
+
+{% block content %}
+<h2>Clear All History</h2>
+<p>Are you sure you want to <strong>permanently delete</strong> all fully sold tickers and their history from this portfolio?<br>
+This action <span style="color:#ef4444;font-weight:600;">cannot be undone</span>.</p>
+<form method="post" style="display:flex; flex-direction:row; gap:16px; justify-content:center; margin-top:24px;">
+    {% csrf_token %}
+    <button type="submit" style="background:#ef4444; color:white; font-weight:600; padding:10px 20px; border-radius:8px;">Yes, clear all history</button>
+    <a href="{% url 'portfolios:portfolio_history' portfolio.id %}" style="display:inline-block; padding:10px 20px; background:#eee; border-radius:8px; text-decoration:none; color:#333; line-height:2.2;">Cancel</a>
+</form>
+{% endblock %} 
