@@ -82,8 +82,8 @@ jobs:
     - name: Code quality check
       run: |
         # Проверяем синтаксис Python файлов
-        python -m py_compile apps/**/*.py
-        python -m py_compile stock_market/**/*.py
+        find apps -name "*.py" -exec python -m py_compile {} \;
+        find stock_market -name "*.py" -exec python -m py_compile {} \;
         # Проверяем импорты
         python -c "import apps.portfolios, apps.stocks, apps.users, stock_market"
     
