@@ -24,11 +24,6 @@ class StockPriceService:
         except Exception as e:
             print(f"YF error for {ticker}: {e}")
         
-        # Fallback to demo data
-        demo_price = StockPriceService._get_demo_price(ticker)
-        if demo_price:
-            cache.set(cache_key, str(demo_price), StockPriceService.CACHE_TIMEOUT)
-            return demo_price
         return None
 
     @staticmethod
@@ -60,11 +55,6 @@ class StockPriceService:
         except Exception as e:
             print(f"YF company info error for {ticker}: {e}")
         
-        # Fallback to demo data
-        demo_info = StockPriceService._get_demo_company_info(ticker)
-        if demo_info:
-            cache.set(cache_key, demo_info, StockPriceService.CACHE_TIMEOUT)
-            return demo_info
         return None
 
     @staticmethod
@@ -103,11 +93,6 @@ class StockPriceService:
         except Exception as e:
             print(f"YF quote error for {ticker}: {e}")
         
-        # Fallback to demo data
-        demo_quote = StockPriceService._get_demo_quote(ticker)
-        if demo_quote:
-            cache.set(cache_key, demo_quote, StockPriceService.CACHE_TIMEOUT)
-            return demo_quote
         return None
 
     @staticmethod
