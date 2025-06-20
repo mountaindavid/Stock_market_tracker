@@ -1,0 +1,6 @@
+# Зависимости для production
+-r base.txt
+
+# Дополнительные production зависимости (если нужны)
+# gunicorn>=21.0.0,<22.0.0
+# whitenoise>=6.5.0,<7.0.0 

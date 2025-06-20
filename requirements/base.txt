@@ -1,0 +1,8 @@
+# Основные зависимости для production
+Django==5.2.3
+psycopg2-binary==2.9.9
+requests==2.31.0
+redis==5.0.1
+python-dotenv==1.0.0
+yfinance==0.2.36
+dj-database-url>=2.0.0,<3.0.0 
