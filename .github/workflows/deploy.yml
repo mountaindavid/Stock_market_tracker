@@ -1,0 +1,81 @@
+# GitHub Actions Workflow для автоматического развертывания
+# Этот workflow запускается при push в main ветку
+
+name: Deploy to Production
+
+# Запускается при push в main ветку
+on:
+  push:
+    branches: [ main ]
+
+# Указываем, что только одно развертывание может выполняться одновременно
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  # Job для развертывания
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Шаг 1: Получаем код
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    # Шаг 2: Настраиваем Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+    
+    # Шаг 3: Устанавливаем зависимости
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/production.txt
+    
+    # Шаг 4: Собираем статические файлы
+    - name: Create logs directory
+      run: mkdir -p logs
+    - name: Collect static files
+      run: |
+        # Создаем временные переменные окружения для сборки
+        export DEBUG=False
+        export SECRET_KEY=temp-key-for-build
+        export DATABASE_URL=sqlite:///temp.db
+        export ALPHA_VANTAGE_API_KEY=demo
+        # Собираем статические файлы
+        python manage.py collectstatic --noinput
+    
+    # Шаг 5: Создаем Docker образ (если используете Docker)
+    - name: Build Docker image
+      run: |
+        # Создаем Docker образ
+        docker build -t stock-market-app:${{ github.sha }} .
+        # Тегируем образ
+        docker tag stock-market-app:${{ github.sha }} stock-market-app:latest
+    
+    # Шаг 6: Уведомление о готовности к развертыванию
+    - name: Notify ready for deployment
+      run: |
+        echo "✅ Build successful!"
+        echo "📦 Docker image created: stock-market-app:${{ github.sha }}"
+        echo "📊 Commit: ${{ github.sha }}"
+        echo "👤 Author: ${{ github.actor }}"
+        echo ""
+        echo "🚀 Ready for deployment!"
+        echo "💡 To deploy, add SSH secrets and uncomment deployment steps"
+    
+    # Шаг 7: Развертывание на сервер (закомментировано для безопасности)
+    # - name: Deploy to server
+    #   uses: appleboy/ssh-action@v1.0.0
+    #   with:
+    #     host: ${{ secrets.HOST }}
+    #     username: ${{ secrets.USERNAME }}
+    #     key: ${{ secrets.SSH_KEY }}
+    #     port: ${{ secrets.PORT }}
+    #     script: |
+    #       echo "Deployment script would run here"
+    #       echo "Add your deployment commands here" 

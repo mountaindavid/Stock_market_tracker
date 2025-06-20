@@ -113,10 +113,10 @@
                                         {% if group.company_info.sector %} • {{ group.company_info.sector }}{% endif %}
                                     </div>
                                 </td>
-                                <td style="padding: 16px 12px; text-align: right; font-weight: 600; white-space: nowrap;">{{ group.total_qty }}</td>
+                                <td style="padding: 16px 12px; text-align: right; font-weight: 600; white-space: nowrap;">{{ group.remaining_qty }}</td>
                                 <td style="padding: 16px 12px; text-align: right; white-space: nowrap;">${{ group.avg_price|floatformat:2 }}</td>
                                 <td style="padding: 16px 12px; text-align: right; font-weight: 600; {% if group.quote_info.price > group.avg_price %}color: #10b981;{% elif group.quote_info.price < group.avg_price %}color: #ef4444;{% endif %}; white-space: nowrap;">
-                                    {% if group.quote_info.price %}${{ group.quote_info.price|floatformat:2 }}{% else %}${{ group.avg_price|floatformat:2 }}{% endif %}
+                                    {% if group.quote_info.price %}${{ group.quote_info.price|floatformat:2 }}{% else %}N/A{% endif %}
                                 </td>
                                 <td style="padding: 16px 12px; text-align: right; {% if group.quote_info.change > 0 %}color: #10b981;{% elif group.quote_info.change < 0 %}color: #ef4444;{% endif %}; white-space: nowrap;">
                                     {% if group.quote_info.change %}

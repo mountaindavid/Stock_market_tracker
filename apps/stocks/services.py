@@ -1,5 +1,4 @@
-import requests
-import time
+from django.core.cache import cache
 import yfinance as yf
 from decimal import Decimal
 from django.conf import settings
@@ -48,27 +47,21 @@ class StockPriceService:
     
     @staticmethod
     def get_stock_price(ticker: str) -> Optional[Decimal]:
-        """
-        Get current stock price for a given ticker
-        Returns Decimal price or None if error
-        """
-        # Check cache first
+        """Get current stock price from Yahoo Finance with caching and fallback."""
         cache_key = f"stock_price_{ticker.upper()}"
-        cached_price = cache.get(cache_key)
-        if cached_price is not None:
-            return Decimal(cached_price)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Decimal(str(cached))
         
-        # Try Yahoo Finance first (more reliable)
-        price = StockPriceService._get_yahoo_price(ticker)
-        if price:
-            cache.set(cache_key, str(price), StockPriceService.CACHE_DURATION)
-            return price
-        
-        # Fallback to Alpha Vantage
-        price = StockPriceService._get_alphavantage_price(ticker)
-        if price:
-            cache.set(cache_key, str(price), StockPriceService.CACHE_DURATION)
-            return price
+        try:
+            stock = yf.Ticker(ticker.upper())
+            info = stock.info
+            price = info.get('regularMarketPrice') or info.get('currentPrice')
+            if price is not None:
+                cache.set(cache_key, str(price), StockPriceService.CACHE_TIMEOUT)
+                return Decimal(str(price))
+        except Exception as e:
+            print(f"YF error for {ticker}: {e}")
         
         # No fallback - return None if no data available
         return None
@@ -82,22 +75,39 @@ class StockPriceService:
             
             stock = yf.Ticker(ticker.upper())
             info = stock.info
-            
-            if 'regularMarketPrice' in info and info['regularMarketPrice']:
-                return Decimal(str(info['regularMarketPrice']))
-            elif 'currentPrice' in info and info['currentPrice']:
-                return Decimal(str(info['currentPrice']))
-            else:
-                print(f"No price data from Yahoo Finance for {ticker}")
-                return None
-                
+            result = {
+                'symbol': ticker.upper(),
+                'name': info.get('longName') or info.get('shortName') or ticker.upper(),
+                'description': info.get('longBusinessSummary', ''),
+                'exchange': info.get('exchange', ''),
+                'currency': info.get('currency', ''),
+                'country': info.get('country', ''),
+                'sector': info.get('sector', ''),
+                'industry': info.get('industry', ''),
+                'market_cap': info.get('marketCap', 0),
+                'employees': info.get('fullTimeEmployees', 0),
+                'website': info.get('website', ''),
+            }
+            cache.set(cache_key, result, StockPriceService.CACHE_TIMEOUT)
+            return result
         except Exception as e:
-            print(f"Error fetching Yahoo Finance price for {ticker}: {e}")
-            return None
-    
+            print(f"YF company info error for {ticker}: {e}")
+        
+        # Fallback to demo data
+        demo_info = StockPriceService._get_demo_company_info(ticker)
+        if demo_info:
+            cache.set(cache_key, demo_info, StockPriceService.CACHE_TIMEOUT)
+            return demo_info
+        return None
+
     @staticmethod
-    def _get_alphavantage_price(ticker: str) -> Optional[Decimal]:
-        """Get price from Alpha Vantage (fallback)"""
+    def get_stock_quote(ticker: str):
+        """Get detailed stock quote from Yahoo Finance with caching and fallback."""
+        cache_key = f"stock_quote_{ticker.upper()}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+        
         try:
             # Get API key from settings
             api_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)
@@ -108,30 +118,28 @@ class StockPriceService:
             params = {
                 'function': 'GLOBAL_QUOTE',
                 'symbol': ticker.upper(),
-                'apikey': api_key
+                'price': Decimal(str(current_price)) if current_price is not None else None,
+                'change': change,
+                'change_percent': f"{change_percent:.2f}%" if change_percent is not None else None,
+                'volume': info.get('volume'),
+                'previous_close': Decimal(str(previous_close)) if previous_close is not None else None,
+                'open': info.get('regularMarketOpen'),
+                'high': info.get('regularMarketDayHigh'),
+                'low': info.get('regularMarketDayLow'),
+                'latest_trading_day': info.get('regularMarketTime'),
             }
-            
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-            
-            # Check for API rate limit
-            if "Information" in data and "rate limit" in data["Information"].lower():
-                print(f"Alpha Vantage API rate limit reached for {ticker}")
-                return None
-            
-            if "Global Quote" in data and data["Global Quote"]:
-                quote = data["Global Quote"]
-                price = quote.get("05. price")
-                if price:
-                    return Decimal(price)
-            
-            return None
-                
+            cache.set(cache_key, result, StockPriceService.CACHE_TIMEOUT)
+            return result
         except Exception as e:
-            print(f"Error fetching Alpha Vantage price for {ticker}: {e}")
-            return None
-    
+            print(f"YF quote error for {ticker}: {e}")
+        
+        # Fallback to demo data
+        demo_quote = StockPriceService._get_demo_quote(ticker)
+        if demo_quote:
+            cache.set(cache_key, demo_quote, StockPriceService.CACHE_TIMEOUT)
+            return demo_quote
+        return None
+
     @staticmethod
     def get_stock_quote(ticker: str) -> Optional[Dict[str, Any]]:
         """
@@ -230,21 +238,6 @@ class StockPriceService:
                 }
             
             return None
-                
-        except Exception as e:
-            print(f"Error fetching Alpha Vantage quote for {ticker}: {e}")
-            return None
-    
-    @staticmethod
-    def search_stocks(query: str) -> list:
-        """
-        Search for stocks by company name or symbol
-        Returns list of matching stocks
-        """
-        cache_key = f"stock_search_{query.lower()}"
-        cached_results = cache.get(cache_key)
-        if cached_results is not None:
-            return cached_results
         
         try:
             api_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)

@@ -1,0 +1,55 @@
+[flake8]
+# Конфигурация flake8 для проверки качества кода
+
+# Максимальная длина строки
+max-line-length = 120
+
+# Игнорируемые ошибки
+ignore = 
+    E501,  # line too long
+    W503,  # line break before binary operator
+    E203,  # whitespace before ':'
+    E722,  # do not use bare except
+    F401,  # imported but unused (может быть нужно для __init__.py)
+    F403,  # wildcard import
+    F405,  # name may be undefined, or defined from star imports
+
+# Исключаемые директории
+exclude = 
+    .git,
+    .venv,
+    venv,
+    env,
+    __pycache__,
+    *.pyc,
+    *.pyo,
+    *.pyd,
+    .Python,
+    build,
+    develop-eggs,
+    dist,
+    downloads,
+    eggs,
+    .eggs,
+    lib,
+    lib64,
+    parts,
+    sdist,
+    var,
+    wheels,
+    pip-wheel-metadata,
+    share/python-wheels,
+    *.egg-info,
+    .installed.cfg,
+    *.egg,
+    MANIFEST,
+    migrations,
+    staticfiles,
+    media
+
+# Статистика
+statistics = True
+count = True
+
+# Формат вывода
+format = %(path)s:%(row)d:%(col)d: %(code)s %(text)s 

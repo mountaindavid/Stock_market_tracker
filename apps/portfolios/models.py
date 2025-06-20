@@ -48,18 +48,6 @@ class Stock(models.Model):
     def __str__(self):
         return f"{self.ticker} - {self.quantity} shares"
     
-    def current_value(self):
-        """Calculate current value of this stock holding"""
-        if self.current_price:
-            return self.quantity * self.current_price
-        return self.quantity * self.purchase_price
-    
-    def profit_loss(self):
-        """Calculate profit/loss for this stock"""
-        if self.current_price:
-            return (self.current_price - self.purchase_price) * self.quantity
-        return 0
-
     def available_quantity(self):
         sold = sum(sale.quantity for sale in self.sales.all())
         return self.quantity - sold
