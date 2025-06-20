@@ -152,7 +152,7 @@ CACHES = {
 }
 
 # Cache timeout settings (in seconds)
-STOCK_PRICE_CACHE_TIMEOUT = 300  # 5 minutes
+STOCK_PRICE_CACHE_TIMEOUT = 3600  # 1 hour
 COMPANY_INFO_CACHE_TIMEOUT = 3600  # 1 hour
 
 # Security settings

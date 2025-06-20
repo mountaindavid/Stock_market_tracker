@@ -5,13 +5,46 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.cache import cache
 from typing import Optional, Dict, Any
+from collections import deque
+from threading import Lock
+import random
 
 
 class StockPriceService:
     """Service to fetch current stock prices from multiple APIs"""
     
-    # Cache duration in seconds (5 minutes for free tier to avoid rate limits)
-    CACHE_DURATION = 300
+    # Cache duration in seconds (1 hour to further reduce API calls)
+    CACHE_DURATION = 3600
+    
+    # Request queue for rate limiting
+    _request_times = deque(maxlen=100)  # Keep last 100 request times
+    _request_lock = Lock()
+    
+    # Rate limiting: max 5 requests per minute for Yahoo Finance
+    MAX_REQUESTS_PER_MINUTE = 5
+    MIN_REQUEST_INTERVAL = 60 / MAX_REQUESTS_PER_MINUTE  # 12 seconds
+    
+    @staticmethod
+    def _rate_limit():
+        """Implement rate limiting for API requests"""
+        with StockPriceService._request_lock:
+            current_time = time.time()
+            
+            # Remove old requests (older than 1 minute)
+            while StockPriceService._request_times and current_time - StockPriceService._request_times[0] > 60:
+                StockPriceService._request_times.popleft()
+            
+            # Check if we're at the rate limit
+            if len(StockPriceService._request_times) >= StockPriceService.MAX_REQUESTS_PER_MINUTE:
+                # Wait until we can make another request
+                sleep_time = 60 - (current_time - StockPriceService._request_times[0]) + 1
+                if sleep_time > 0:
+                    print(f"Rate limit reached. Waiting {sleep_time:.1f} seconds...")
+                    time.sleep(sleep_time)
+                    current_time = time.time()
+            
+            # Add current request time
+            StockPriceService._request_times.append(current_time)
     
     @staticmethod
     def get_stock_price(ticker: str) -> Optional[Decimal]:
@@ -37,13 +70,16 @@ class StockPriceService:
             cache.set(cache_key, str(price), StockPriceService.CACHE_DURATION)
             return price
         
-        # Use demo data as last resort
-        return StockPriceService._get_demo_price(ticker)
+        # No fallback - return None if no data available
+        return None
     
     @staticmethod
     def _get_yahoo_price(ticker: str) -> Optional[Decimal]:
-        """Get price from Yahoo Finance"""
+        """Get price from Yahoo Finance with rate limiting"""
         try:
+            # Apply rate limiting
+            StockPriceService._rate_limit()
+            
             stock = yf.Ticker(ticker.upper())
             info = stock.info
             
@@ -65,7 +101,7 @@ class StockPriceService:
         try:
             # Get API key from settings
             api_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)
-            if not api_key:
+            if not api_key or api_key == 'demo':
                 return None
             
             url = f"https://www.alphavantage.co/query"
@@ -97,23 +133,6 @@ class StockPriceService:
             return None
     
     @staticmethod
-    def _get_demo_price(ticker: str) -> Decimal:
-        """Get demo price for testing when API is not available"""
-        demo_prices = {
-            'AAPL': Decimal('175.50'),
-            'GOOGL': Decimal('142.80'),
-            'MSFT': Decimal('380.20'),
-            'TSLA': Decimal('245.30'),
-            'NVDA': Decimal('485.90'),
-            'AMZN': Decimal('145.60'),
-            'META': Decimal('330.40'),
-            'NFLX': Decimal('485.70'),
-            'AMD': Decimal('125.30'),
-            'INTC': Decimal('45.80'),
-        }
-        return demo_prices.get(ticker.upper(), Decimal('100.00'))
-    
-    @staticmethod
     def get_stock_quote(ticker: str) -> Optional[Dict[str, Any]]:
         """
         Get detailed stock quote information
@@ -140,8 +159,11 @@ class StockPriceService:
     
     @staticmethod
     def _get_yahoo_quote(ticker: str) -> Optional[Dict[str, Any]]:
-        """Get quote from Yahoo Finance"""
+        """Get quote from Yahoo Finance with rate limiting"""
         try:
+            # Apply rate limiting
+            StockPriceService._rate_limit()
+            
             stock = yf.Ticker(ticker.upper())
             info = stock.info
             
@@ -175,7 +197,7 @@ class StockPriceService:
         """Get quote from Alpha Vantage (fallback)"""
         try:
             api_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)
-            if not api_key:
+            if not api_key or api_key == 'demo':
                 return None
             
             url = f"https://www.alphavantage.co/query"
@@ -226,7 +248,7 @@ class StockPriceService:
         
         try:
             api_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)
-            if not api_key:
+            if not api_key or api_key == 'demo':
                 return []
             
             url = f"https://www.alphavantage.co/query"
@@ -288,8 +310,11 @@ class StockPriceService:
     
     @staticmethod
     def _get_yahoo_overview(ticker: str) -> Optional[Dict[str, Any]]:
-        """Get company overview from Yahoo Finance"""
+        """Get company overview from Yahoo Finance with rate limiting"""
         try:
+            # Apply rate limiting
+            StockPriceService._rate_limit()
+            
             stock = yf.Ticker(ticker.upper())
             info = stock.info
             
@@ -319,7 +344,7 @@ class StockPriceService:
         """Get company overview from Alpha Vantage (fallback)"""
         try:
             api_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)
-            if not api_key:
+            if not api_key or api_key == 'demo':
                 return None
             
             url = f"https://www.alphavantage.co/query"

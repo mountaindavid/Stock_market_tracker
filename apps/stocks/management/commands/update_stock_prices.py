@@ -2,7 +2,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.portfolios.models import Stock
 from apps.stocks.services import StockPriceService
-import time
 
 
 class Command(BaseCommand):
@@ -58,9 +57,8 @@ class Command(BaseCommand):
                     )
                     error_count += 1
                 
-                # Rate limiting for free API (5 requests per minute)
-                if not options['ticker']:
-                    time.sleep(12)  # Wait 12 seconds between requests
+                # Rate limiting is now handled by StockPriceService
+                # No need for manual sleep here
                     
             except Exception as e:
                 self.stdout.write(

@@ -11,10 +11,6 @@
         <input type="text" name="ticker" placeholder="e.g., AAPL" required value="{{ request.GET.ticker|default:'' }}" {% if request.GET.ticker %}readonly{% endif %}>
     </p>
     <p>
-        <label>Company Name:</label><br>
-        <input type="text" name="company_name" placeholder="e.g., Apple Inc." required value="{{ request.GET.company_name|default:'' }}" {% if request.GET.company_name %}readonly{% endif %}>
-    </p>
-    <p>
         <label>Quantity:</label><br>
         <input type="number" name="quantity" min="1" required>
     </p>
